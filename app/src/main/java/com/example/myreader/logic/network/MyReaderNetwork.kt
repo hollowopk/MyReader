@@ -1,6 +1,7 @@
 package com.example.myreader.logic.network
 
 import com.example.myreader.logic.database.Book
+import kotlinx.coroutines.*
 import okhttp3.FormBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -59,18 +60,40 @@ object MyReaderNetwork {
         val doc = getDocument(homepage)
         if (doc != null) {
             val pages = getPageURLList(doc)
-            val chapters = ArrayList<String>()
             var progress = 0.0
             val count = pages.size.toDouble()
-            for (page in pages) {
-                val pageDoc = getDocument(page)
-                if (pageDoc != null) {
-                    chapters.addAll(getChapterURLList(pageDoc))
-                    listener.updateProgress((progress/count*100).toInt())
-                    progress += 1
-                }
+            val chapters = Array(pages.size) {
+                ArrayList<String>()
             }
-            listener.onFinish(chapters)
+            var index = 0
+            val jobs = ArrayList<Deferred<Unit>>()
+            CoroutineScope(Dispatchers.IO).launch {
+                for (page in pages) {
+                    val i = index
+                    val job = async {
+                        val pageDoc = getDocument(page)
+                        if (pageDoc != null) {
+                            val chapterURLList = getChapterURLList(pageDoc)
+                            val size = chapters.size
+                            if (i < size) {
+                                chapters[i] = chapterURLList
+                            }
+                            listener.updateProgress((progress / count * 100).toInt())
+                            progress += 1
+                        }
+                    }
+                    jobs.add(job)
+                    index += 1
+                }
+                for (job in jobs) {
+                    job.await()
+                }
+                val chapterList = ArrayList<String>()
+                for (list in chapters) {
+                    chapterList.addAll(list)
+                }
+                listener.onFinish(chapterList)
+            }
         }
     }
 

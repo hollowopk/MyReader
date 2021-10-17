@@ -125,6 +125,22 @@ class BookInfoActivity : AppCompatActivity() {
             if (viewModel.getList().isEmpty()) {
                 "正在获取章节信息".showToast(this)
                 progressBar.visibility = View.VISIBLE
+                viewModel.downloadCatalog(book.homepage, object : MyReaderNetwork.CatalogDownloadListener {
+                    override fun updateProgress(progress: Int) {
+                        runOnUiThread {
+                            progressBar.progress = progress
+                        }
+                    }
+
+                    override fun onFinish(urlList: List<String>) {
+                        runOnUiThread {
+                            progressBar.visibility = View.GONE
+                        }
+                        viewModel.setList(urlList)
+                        startReadWithList(urlList)
+                    }
+                })
+                /*
                 Repository.downloadCatalog(book.homepage, object : MyReaderNetwork.CatalogDownloadListener {
                     override fun updateProgress(progress: Int) {
                         runOnUiThread {
@@ -140,6 +156,7 @@ class BookInfoActivity : AppCompatActivity() {
                         startReadWithList(urlList)
                     }
                 })
+                */
 
             } else {
                 startReadWithList(viewModel.getList())

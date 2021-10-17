@@ -3,6 +3,7 @@ package com.example.myreader.logic
 import androidx.lifecycle.liveData
 import com.example.myreader.logic.network.MyReaderNetwork
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
 import java.io.File
 import java.lang.Exception
 import java.lang.RuntimeException
@@ -29,9 +30,9 @@ object Repository {
         MyReaderNetwork.downloadBook(bookName, homepage, fileDir, listener)
     }
 
-    fun downloadCatalog(homepage: String, listener: MyReaderNetwork.CatalogDownloadListener) = thread {
+    fun downloadCatalog(homepage: String,
+                        listener: MyReaderNetwork.CatalogDownloadListener) =
         MyReaderNetwork.downloadCatalog(homepage, listener)
-    }
 
     fun getArticle(url: String,
                    listener: MyReaderNetwork.ArticleDownloadListener) = thread {
