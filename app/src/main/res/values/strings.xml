@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">MyReader</string>
+    <string name="title_activity_main">MainActivity</string>
+    <string name="title_bookshelf">书架</string>
+    <string name="title_search">查书</string>
+    <string name="title_settings">设置</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="title_searchhint">输入书名</string>
+</resources>

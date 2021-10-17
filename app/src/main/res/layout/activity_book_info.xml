@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".ui.bookinfo.BookInfoActivity">
+
+    <com.daimajia.numberprogressbar.NumberProgressBar
+        android:id="@+id/info_downloadProgressBar"
+        style="@style/NumberProgressBar_Default"
+        android:layout_width="300dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="40dp"
+        app:progress_current="0"
+        app:progress_max="100"
+        app:progress_text_size="17sp"
+        app:progress_reached_bar_height="13dp"
+        app:progress_unreached_bar_height="13dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/info_intro"
+        android:visibility="gone"/>
+
+    <ImageView
+        android:id="@+id/info_bookImg"
+        android:layout_width="130dp"
+        android:layout_height="180dp"
+        android:layout_marginStart="15dp"
+        android:layout_marginTop="40dp"
+        android:src="@drawable/bookimg"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/info_bookName"
+        android:layout_width="220dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="50dp"
+        android:text="遮天"
+        android:textColor="@color/black"
+        android:textSize="30sp"
+        app:layout_constraintStart_toEndOf="@+id/info_bookImg"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/info_author"
+        android:layout_width="220dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="辰东"
+        android:textSize="20sp"
+        app:layout_constraintStart_toStartOf="@+id/info_bookName"
+        app:layout_constraintTop_toBottomOf="@+id/info_bookName" />
+
+    <TextView
+        android:id="@+id/info_lastOrNewest"
+        android:layout_width="220dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:text="最新章节："
+        android:textSize="15sp"
+        app:layout_constraintStart_toStartOf="@+id/info_author"
+        app:layout_constraintTop_toBottomOf="@+id/info_author" />
+
+    <TextView
+        android:id="@+id/info_chapterName"
+        android:layout_width="220dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="9dp"
+        android:text="第一章"
+        android:textSize="15sp"
+        app:layout_constraintStart_toStartOf="@+id/info_lastOrNewest"
+        app:layout_constraintTop_toBottomOf="@+id/info_lastOrNewest" />
+
+    <TextView
+        android:id="@+id/info_intro"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="15dp"
+        android:layout_marginEnd="15dp"
+        android:text="冰冷与黑暗并存的宇宙深处，九具庞大的龙尸拉着一口青铜古棺，亘古长存。 这是太空探测器在枯寂的宇宙中捕捉到的一幅极其震撼的画面。 九龙拉棺，究竟是回到了上古，还是来到了星空的彼岸？ 一个浩大的仙侠世界，光怪陆离，神秘无尽。热血似火山沸腾，激情若瀚海汹涌，欲望如深渊无止境…… 登天路，踏歌行，弹指遮天。"
+        android:textSize="17sp"
+        android:maxLines="12"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <LinearLayout
+        android:id="@+id/linearLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <Button
+            android:id="@+id/info_addToShelfBtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="加入书架"
+            android:textAlignment="center"
+            android:textColor="@color/white" />
+
+        <Button
+            android:id="@+id/info_downlaodBtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="下载"
+            android:textAlignment="center"
+            android:textColor="@color/white" />
+
+        <Button
+            android:id="@+id/info_startReadingBtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="开始阅读"
+            android:textAlignment="center"
+            android:textColor="@color/white" />
+
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
