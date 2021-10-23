@@ -12,21 +12,31 @@ import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import com.example.myreader.R
 import com.example.myreader.logic.Repository
+import com.example.myreader.logic.database.AppDatabase
+import com.example.myreader.logic.database.Book
 import com.example.myreader.logic.network.MyReaderNetwork
+import com.example.myreader.logic.utils.showToast
 import com.example.myreader.ui.bookinfo.BookInfoActivity
 import java.io.File
+import kotlin.concurrent.thread
 
 class DownloadService : Service() {
+
+    private lateinit var database: AppDatabase
 
     private val binder = DownloadBinder()
     private lateinit var manager: NotificationManager
     private lateinit var notification: Notification
     private lateinit var layout: RemoteViews
 
+    init {
+        database = AppDatabase.getDatabase(this)
+    }
+
     inner class DownloadBinder : Binder() {
 
-        fun startDownloadBook(bookName: String, homepage: String, fileDir: File) {
-            Repository.downloadBook(bookName, homepage, fileDir,
+        fun startDownloadBook(book: Book, fileDir: File) {
+            Repository.downloadBook(book.bookName, book.homepage, fileDir,
                 object : MyReaderNetwork.BookDownloadListener {
                     override fun updateProgress(progress: Int) {
                         layout.setProgressBar(R.id.notification_progress, 100,
@@ -36,6 +46,11 @@ class DownloadService : Service() {
 
                     override fun onFinish() {
                         stopForeground(true)
+                        book.isDownload = true
+                        val bookDao = database.BookDao()
+                        thread {
+                            bookDao.updateBook(book)
+                        }
                     }
                 })
         }

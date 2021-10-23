@@ -4,32 +4,67 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.example.myreader.logic.Repository
 import com.example.myreader.logic.network.MyReaderNetwork
+import java.io.File
 import java.util.ArrayList
+import kotlin.concurrent.thread
 
 class ReaderViewModel : ViewModel() {
 
     var curChapter = 0
     var titles = arrayListOf("", "", "")
 
-    private var _chapterURLList = ArrayList<String>()
+    private lateinit var chapterURLList: ArrayList<String>
+    private lateinit var file: File
+    private val contentList = ArrayList<String>()
+
+    private var isDownload = false
+
     private val _preArticle = MutableLiveData<String>()
     private val _curArticle = MutableLiveData<String>()
     private val _nxtArticle = MutableLiveData<String>()
 
-    private val chapterURLList get() = _chapterURLList
     val preArticle get() = _preArticle
     val curArticle get() = _curArticle
     val nxtArticle get() = _nxtArticle
 
-    fun init(list: ArrayList<String>) {
-        _chapterURLList.clear()
-        _chapterURLList.addAll(list)
+    fun initWithList(list: ArrayList<String>) {
+        chapterURLList = list
         getArticle(0, 0)
         getArticle(1, 1)
         getArticle(2, 2)
     }
 
-    fun getArticle(chapterNum: Int, target: Int){
+    fun initWithFile(f: File) {
+        file = f
+        isDownload = true
+        var str = ""
+        var count = 0
+        file.useLines {
+                it.forEach { line ->
+                    str += line
+                    str += "\n"
+                    count += 1
+                    if (count == 17) {
+                        contentList.add(str)
+                        str = ""
+                        count = 0
+                    }
+                }
+            }
+        getArticle(0, 0)
+        getArticle(1, 1)
+        getArticle(2, 2)
+    }
+
+    fun getArticle(chapterNum: Int, target: Int) {
+        if (!isDownload) {
+            getArticleFromInternet(chapterNum, target)
+        } else {
+            getArticleFromLocal(chapterNum, target)
+        }
+    }
+
+    private fun getArticleFromInternet(chapterNum: Int, target: Int) {
         if (chapterNum < chapterURLList.size) {
             Repository.getArticle(
                 chapterURLList[chapterNum],
@@ -50,6 +85,24 @@ class ReaderViewModel : ViewModel() {
                         }
                     }
                 })
+        }
+    }
+
+    private fun getArticleFromLocal(chapterNum: Int, target: Int) {
+        if (chapterNum >= 0 && chapterNum < contentList.size) {
+            val content = contentList[chapterNum]
+            curChapter = chapterNum - target
+            when (target) {
+                0 -> {
+                    _preArticle.value = content
+                }
+                1 -> {
+                    _curArticle.value = content
+                }
+                2 -> {
+                    _nxtArticle.value = content
+                }
+            }
         }
     }
 

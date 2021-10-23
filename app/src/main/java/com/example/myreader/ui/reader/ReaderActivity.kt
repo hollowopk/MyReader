@@ -19,6 +19,7 @@ import com.example.myreader.logic.Repository
 import com.example.myreader.logic.network.MyReaderNetwork
 import com.example.myreader.logic.utils.showToast
 import kotlinx.coroutines.CoroutineScope
+import java.io.File
 import kotlin.concurrent.thread
 
 class ReaderActivity : AppCompatActivity() {
@@ -38,9 +39,13 @@ class ReaderActivity : AppCompatActivity() {
         supportActionBar?.hide()
 
         val urlList = intent.getStringArrayListExtra("urlList")
+        val file = intent.getSerializableExtra("file")
 
+        if (file != null) {
+            viewModel.initWithFile(file as File)
+        }
         if (urlList != null) {
-            viewModel.init(urlList)
+            viewModel.initWithList(urlList)
         }
 
         setObserver()

@@ -23,6 +23,7 @@ import com.example.myreader.logic.utils.showToast
 import com.example.myreader.ui.MainActivity
 import com.example.myreader.ui.reader.ReaderActivity
 import java.io.ByteArrayOutputStream
+import java.io.File
 import java.util.ArrayList
 import kotlin.concurrent.thread
 
@@ -33,7 +34,7 @@ class BookInfoActivity : AppCompatActivity() {
     private val connection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             downloadBinder = service as DownloadService.DownloadBinder
-            downloadBinder.startDownloadBook(book.bookName, book.homepage, cacheDir)
+            downloadBinder.startDownloadBook(book, cacheDir)
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {}
@@ -122,44 +123,32 @@ class BookInfoActivity : AppCompatActivity() {
         }
 
         readBtn.setOnClickListener {
-            if (viewModel.getList().isEmpty()) {
-                "正在获取章节信息".showToast(this)
-                progressBar.visibility = View.VISIBLE
-                viewModel.downloadCatalog(book.homepage, object : MyReaderNetwork.CatalogDownloadListener {
-                    override fun updateProgress(progress: Int) {
-                        runOnUiThread {
-                            progressBar.progress = progress
-                        }
-                    }
+            val dir = File(cacheDir, book.bookName)
+            val file = File(dir.absolutePath, "${book.bookName}.txt")
+            if (!startReadWithFile(file)) {
+                if (viewModel.getList().isEmpty()) {
+                    "正在获取章节信息".showToast(this)
+                    progressBar.visibility = View.VISIBLE
+                    viewModel.downloadCatalog(
+                        book.homepage,
+                        object : MyReaderNetwork.CatalogDownloadListener {
+                            override fun updateProgress(progress: Int) {
+                                runOnUiThread {
+                                    progressBar.progress = progress
+                                }
+                            }
 
-                    override fun onFinish(urlList: List<String>) {
-                        runOnUiThread {
-                            progressBar.visibility = View.GONE
-                        }
-                        viewModel.setList(urlList)
-                        startReadWithList(urlList)
-                    }
-                })
-                /*
-                Repository.downloadCatalog(book.homepage, object : MyReaderNetwork.CatalogDownloadListener {
-                    override fun updateProgress(progress: Int) {
-                        runOnUiThread {
-                            progressBar.progress = progress
-                        }
-                    }
-
-                    override fun onFinish(urlList: List<String>) {
-                        runOnUiThread {
-                            progressBar.visibility = View.GONE
-                        }
-                        viewModel.setList(urlList)
-                        startReadWithList(urlList)
-                    }
-                })
-                */
-
-            } else {
-                startReadWithList(viewModel.getList())
+                            override fun onFinish(urlList: List<String>) {
+                                runOnUiThread {
+                                    progressBar.visibility = View.GONE
+                                }
+                                viewModel.setList(urlList)
+                                startReadWithList(urlList)
+                            }
+                        })
+                } else {
+                    startReadWithList(viewModel.getList())
+                }
             }
         }
 
@@ -186,6 +175,20 @@ class BookInfoActivity : AppCompatActivity() {
             )
             startActivityForResult(intent, readerReqCode)
         }
+    }
+
+    private fun startReadWithFile(file: File): Boolean {
+        if (!file.exists()) {
+            return false
+        } else {
+            val intent = Intent(
+                this,
+                ReaderActivity::class.java
+            )
+            intent.putExtra("file", file)
+            startActivityForResult(intent, readerReqCode)
+        }
+        return true
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {

@@ -2,17 +2,21 @@ package com.example.myreader.logic.network
 
 import com.example.myreader.logic.database.Book
 import kotlinx.coroutines.*
-import okhttp3.FormBody
-import okhttp3.OkHttpClient
-import okhttp3.Request
+import okhttp3.*
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import java.io.File
+import java.io.IOException
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlin.coroutines.suspendCoroutine
 import kotlin.math.min
 
 object MyReaderNetwork {
 
     private const val url = "https://m.shuhaige.tw"
+
+    private val client = OkHttpClient()
 
     interface CatalogDownloadListener {
         fun updateProgress(progress: Int)
@@ -102,24 +106,12 @@ object MyReaderNetwork {
         val doc = getDocument(homepage)
         if (doc != null) {
             val pages = getPageURLList(doc)
-            val chapters = ArrayList<String>()
-            for (page in pages) {
-                val pageDoc = getDocument(page)
-                if (pageDoc != null) {
-                    chapters.addAll(getChapterURLList(pageDoc))
-                }
+            CoroutineScope(Dispatchers.IO).launch {
+                val chapters = getChapters(pages)
+                val articles = getArticles(chapters, listener)
+                writeToFile(bookName, fileDir, articles)
+                listener.onFinish()
             }
-            val count = chapters.size.toDouble()
-            var progress = 0.0
-            for (chapter in chapters) {
-                val article = getArticle(chapter)
-                val dir = File(fileDir, bookName)
-                dir.mkdir()
-                File(dir.absolutePath, "$bookName.txt").appendText(article)
-                listener.updateProgress((progress / count * 100).toInt())
-                progress += 1
-            }
-            listener.onFinish()
         }
     }
 
@@ -139,7 +131,6 @@ object MyReaderNetwork {
     }
 
     private fun getDocument(url: String): Document? {
-        val client = OkHttpClient()
         val request = Request.Builder().url(url).build()
         val response =  client.newCall(request).execute()
         val html = response.body?.string()
@@ -147,6 +138,25 @@ object MyReaderNetwork {
             return Jsoup.parse(html)
         }
         return null
+    }
+
+    private suspend fun getDocumentAsync(url: String): Document? {
+        val request = Request.Builder().url(url).build()
+        return suspendCoroutine {
+            client.newCall(request).enqueue(object : Callback {
+                override fun onFailure(call: Call, e: IOException) {
+                    it.resumeWithException(e)
+                }
+                override fun onResponse(call: Call, response: Response) {
+                    val html = response.body?.string()
+                    if (html != null) {
+                        it.resume(Jsoup.parse(html))
+                    }
+                    response.close()
+                }
+
+            })
+        }
     }
 
     private fun getChapterURLList(doc: Document): ArrayList<String> {
@@ -199,12 +209,88 @@ object MyReaderNetwork {
         return ""
     }
 
-    fun getArticle(url: String, listener: ArticleDownloadListener) {
-        val doc = getDocument(url)
+    private suspend fun getArticleAsync(url: String): String {
+        val doc = getDocumentAsync(url)
         if (doc != null) {
             val title = getTitle(doc)
             val content = getContent(doc)
-            listener.onFinish(title, content)
+            return title + "\n\n\n" + content
+        }
+        return ""
+    }
+
+    fun getArticle(url: String, listener: ArticleDownloadListener) {
+        CoroutineScope(Dispatchers.IO).launch {
+            val doc = getDocumentAsync(url)
+            if (doc != null) {
+                val title = getTitle(doc)
+                val content = getContent(doc)
+                listener.onFinish(title, content)
+            }
+        }
+    }
+
+    private suspend fun getChapters(pages: List<String>) = coroutineScope {
+        val chapterList = Array(pages.size) {
+            ArrayList<String>()
+        }
+        val chapters = ArrayList<String>()
+        val jobs = ArrayList<Job>()
+        var chapterIndex = 0
+        for (page in pages) {
+            val i = chapterIndex
+            chapterIndex += 1
+            jobs.add(launch {
+                val pageDoc = getDocumentAsync(page)
+                if (pageDoc != null) {
+                    chapterList[i] = getChapterURLList(pageDoc)
+                }
+            })
+        }
+        for (job in jobs) {
+            job.join()
+        }
+        for (list in chapterList) {
+            chapters.addAll(list)
+        }
+        chapters
+    }
+
+    private suspend fun getArticles(chapters: ArrayList<String>,
+                                    listener: BookDownloadListener)
+    = coroutineScope {
+        val jobs = ArrayList<Job>()
+        var articleIndex = 0
+        var progress = 0.0
+        val sum = chapters.size.toDouble()
+        val articles = Array(chapters.size) {
+            ""
+        }
+        for (chapter in chapters) {
+            val index = articleIndex
+            articleIndex += 1
+            jobs.add(launch {
+                articles[index] = getArticleAsync(chapter)
+                listener.updateProgress((progress / sum * 100).toInt())
+                progress += 1
+            })
+        }
+        for (job in jobs) {
+            job.join()
+        }
+        articles
+    }
+
+    private fun writeToFile(bookName: String, fileDir: File,
+                            articles: Array<String>) {
+        val dir = File(fileDir, bookName)
+        if (dir.exists()) {
+            dir.delete()
+        }
+        dir.mkdir()
+        val file = File(dir.absolutePath, "$bookName.txt")
+        for (article in articles) {
+            file.appendText(article)
         }
     }
 
